@@ -1,0 +1,98 @@
+# Single source of truth for equipment fleet.
+# Consumed by simulator (to create OPC-UA nodes) and api-service (seed).
+equipment:
+  - id: FORM-01
+    name: "Formation Cycler #1"
+    type: formation_cycler
+    location: "Line-A / Bay-1"
+    metadata:
+      vendor: SimuCorp
+      model: FC-2000
+      rated_throughput: 150
+    metrics: [temperature, voltage, throughput, cycle_count]
+    unit_duration_seconds: 1800   # 30 min per cell
+    unit_id_prefix: CELL
+
+  - id: FORM-02
+    name: "Formation Cycler #2"
+    type: formation_cycler
+    location: "Line-A / Bay-2"
+    metadata:
+      vendor: SimuCorp
+      model: FC-2000
+      rated_throughput: 150
+    metrics: [temperature, voltage, throughput, cycle_count]
+    unit_duration_seconds: 1800
+    unit_id_prefix: CELL
+
+  - id: AGING-01
+    name: "Aging Chamber #1"
+    type: aging_chamber
+    location: "Line-A / Bay-3"
+    metadata:
+      vendor: SimuCorp
+      model: AC-500
+      rated_throughput: 300
+    metrics: [temperature, throughput]
+    unit_duration_seconds: 14400  # 4 hours per batch
+    unit_id_prefix: TRAY
+
+  - id: AGING-02
+    name: "Aging Chamber #2"
+    type: aging_chamber
+    location: "Line-A / Bay-4"
+    metadata:
+      vendor: SimuCorp
+      model: AC-500
+      rated_throughput: 300
+    metrics: [temperature, throughput]
+    unit_duration_seconds: 14400
+    unit_id_prefix: TRAY
+
+  - id: COAT-01
+    name: "Electrode Coater #1"
+    type: electrode_coater
+    location: "Line-B / Bay-1"
+    metadata:
+      vendor: SimuCorp
+      model: EC-1000
+      rated_throughput: 80
+    metrics: [temperature, thickness, throughput]
+    unit_duration_seconds: 600    # 10 min per roll
+    unit_id_prefix: COIL
+
+  - id: CAL-01
+    name: "Calendering Machine #1"
+    type: calendering_machine
+    location: "Line-B / Bay-2"
+    metadata:
+      vendor: SimuCorp
+      model: CM-800
+      rated_throughput: 100
+    metrics: [pressure, thickness, throughput]
+    unit_duration_seconds: 420    # 7 min per roll
+    unit_id_prefix: COIL
+
+  - id: ASSY-01
+    name: "Cell Assembler #1"
+    type: cell_assembler
+    location: "Line-C / Bay-1"
+    metadata:
+      vendor: SimuCorp
+      model: CA-3000
+      rated_throughput: 200
+    metrics: [temperature, throughput, cycle_count]
+    unit_duration_seconds: 60     # 1 min per cell
+    unit_id_prefix: CELL
+
+  - id: ASSY-02
+    name: "Cell Assembler #2"
+    type: cell_assembler
+    location: "Line-C / Bay-2"
+    metadata:
+      vendor: SimuCorp
+      model: CA-3000
+      rated_throughput: 200
+    metrics: [temperature, throughput, cycle_count]
+    unit_duration_seconds: 60
+    unit_id_prefix: CELL
