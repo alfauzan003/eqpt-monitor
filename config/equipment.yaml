@@ -4,6 +4,7 @@ equipment:
   - id: FORM-01
     name: "Formation Cycler #1"
     type: formation_cycler
+    line: A
     location: "Line-A / Bay-1"
     metadata:
       vendor: SimuCorp
@@ -13,9 +14,10 @@ equipment:
     unit_duration_seconds: 1800   # 30 min per cell
     unit_id_prefix: CELL
 
-  - id: FORM-02
+  - id: FORM-02  # same as above
     name: "Formation Cycler #2"
     type: formation_cycler
+    line: A
     location: "Line-A / Bay-2"
     metadata:
       vendor: SimuCorp
@@ -28,6 +30,7 @@ equipment:
   - id: AGING-01
     name: "Aging Chamber #1"
     type: aging_chamber
+    line: A
     location: "Line-A / Bay-3"
     metadata:
       vendor: SimuCorp
@@ -37,9 +40,10 @@ equipment:
     unit_duration_seconds: 14400  # 4 hours per batch
     unit_id_prefix: TRAY
 
-  - id: AGING-02
+  - id: AGING-02  # same as above
     name: "Aging Chamber #2"
     type: aging_chamber
+    line: A
     location: "Line-A / Bay-4"
     metadata:
       vendor: SimuCorp
@@ -52,6 +56,7 @@ equipment:
   - id: COAT-01
     name: "Electrode Coater #1"
     type: electrode_coater
+    line: B
     location: "Line-B / Bay-1"
     metadata:
       vendor: SimuCorp
@@ -64,6 +69,7 @@ equipment:
   - id: CAL-01
     name: "Calendering Machine #1"
     type: calendering_machine
+    line: B
     location: "Line-B / Bay-2"
     metadata:
       vendor: SimuCorp
@@ -76,6 +82,7 @@ equipment:
   - id: ASSY-01
     name: "Cell Assembler #1"
     type: cell_assembler
+    line: C
     location: "Line-C / Bay-1"
     metadata:
       vendor: SimuCorp
@@ -85,9 +92,10 @@ equipment:
     unit_duration_seconds: 60     # 1 min per cell
     unit_id_prefix: CELL
 
-  - id: ASSY-02
+  - id: ASSY-02  # same as above
     name: "Cell Assembler #2"
     type: cell_assembler
+    line: C
     location: "Line-C / Bay-2"
     metadata:
       vendor: SimuCorp

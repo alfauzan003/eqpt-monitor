@@ -2,12 +2,16 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.egg-info/
+**/*.egg-info/
 .venv/
 venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+build/
 
 # Node
 node_modules/
@@ -15,11 +19,13 @@ dist/
 .vite/
 
 # Env
-.env
-.env.local
+.env*
+!.env.example
 
 # Docker volumes
 data/
+**/data/
+grafana/data/
 
 # IDE
 .vscode/
