@@ -1,0 +1,39 @@
+[project]
+name = "factory-pulse-ingest"
+version = "0.1.0"
+description = "OPC-UA ingest to TimescaleDB + Redis"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncua>=1.1.5",
+    "asyncpg>=0.29",
+    "redis>=5.0",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.3",
+    "mypy>=1.9",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
