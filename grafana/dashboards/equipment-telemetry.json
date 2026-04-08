@@ -1,0 +1,36 @@
+{
+  "title": "Equipment Telemetry",
+  "uid": "equipment-telemetry",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "equipment_id",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+        "query": "SELECT id FROM equipment ORDER BY id",
+        "refresh": 1,
+        "includeAll": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Metrics for $equipment_id",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "TimescaleDB" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT time AS \"time\", metric_name, value FROM telemetry WHERE equipment_id = '$equipment_id' AND $__timeFilter(time) ORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 12 }
+    }
+  ]
+}

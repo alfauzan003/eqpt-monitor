@@ -3,14 +3,19 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
+from pathlib import Path as _P
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from api.config import settings
 from api.db import close_pool, get_pool
 from api.redis_client import close_client
+from api.routes.batches import router as batches_router
+from api.routes.equipment import router as equipment_router
 from api.routes.health import router as health_router
+from api.routes.telemetry import router as telemetry_router
+from api.websocket import router as ws_router
 from api.seed import seed_equipment
 
 logging.basicConfig(
@@ -24,7 +29,7 @@ logger = logging.getLogger("api")
 async def lifespan(app: FastAPI):
     pool = await get_pool()
     try:
-        await seed_equipment(pool, Path(settings.equipment_config_path))
+        await seed_equipment(pool, _P(settings.equipment_config_path))
     except FileNotFoundError:
         logger.warning("equipment config not found at %s; skipping seed", settings.equipment_config_path)
     yield
@@ -34,3 +39,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Factory Pulse API", version="0.1.0", lifespan=lifespan)
 app.include_router(health_router, prefix="/api")
+app.include_router(equipment_router, prefix="/api")
+app.include_router(telemetry_router, prefix="/api")
+app.include_router(batches_router, prefix="/api")
+app.include_router(ws_router)  # no /api prefix for ws
+
+_static_dir = _P(__file__).parent.parent.parent / "static"
+if _static_dir.exists():
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")

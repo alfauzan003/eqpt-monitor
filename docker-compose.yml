@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     command:
@@ -23,5 +23,68 @@ services:
     ports:
       - "6379:6379"
 
+  simulator:
+    build: services/simulator
+    environment:
+      OPCUA_ENDPOINT: opc.tcp://0.0.0.0:4840
+      EQUIPMENT_CONFIG: /config/equipment.yaml
+      SIMULATOR_TICK_SECONDS: "1.0"
+    volumes:
+      - ./config:/config:ro
+    ports:
+      - "4840:4840"
+
+  ingest:
+    build: services/ingest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-factory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
+      REDIS_HOST: redis
+      OPCUA_ENDPOINT: opc.tcp://simulator:4840
+      OPCUA_NAMESPACE: urn:factory-pulse:simulator
+    depends_on:
+      - timescaledb
+      - redis
+      - simulator
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-factory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
+      REDIS_HOST: redis
+      EQUIPMENT_CONFIG_PATH: /config/equipment.yaml
+    volumes:
+      - ./config:/config:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - timescaledb
+      - redis
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-factory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - timescaledb
+
 volumes:
   timescaledb_data:
+  grafana_data:
