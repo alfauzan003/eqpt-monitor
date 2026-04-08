@@ -73,8 +73,12 @@ async def connect_and_subscribe(
     await client.connect()
     logger.info("connected to OPC-UA %s", endpoint)
 
-    factory = await client.nodes.objects.get_child(["0:Factory"])
-    equipment_folder = await factory.get_child(["0:Equipment"])
+    # Look up the simulator namespace index by URI so we're not hardcoding it
+    ns = await client.get_namespace_index("urn:factory-pulse:simulator")
+    logger.info("simulator namespace index: %d", ns)
+
+    factory = await client.nodes.objects.get_child([f"{ns}:Factory"])
+    equipment_folder = await factory.get_child([f"{ns}:Equipment"])
     equipment_objs = await equipment_folder.get_children()
 
     node_index: dict[str, tuple[str, str]] = {}

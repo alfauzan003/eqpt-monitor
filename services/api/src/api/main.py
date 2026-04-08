@@ -5,7 +5,8 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path as _P
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.config import settings
@@ -44,6 +45,16 @@ app.include_router(telemetry_router, prefix="/api")
 app.include_router(batches_router, prefix="/api")
 app.include_router(ws_router)  # no /api prefix for ws
 
-_static_dir = _P(__file__).parent.parent.parent / "static"
+_static_dir = _P("/app/static")
 if _static_dir.exists():
-    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")
+    # Serve hashed assets (JS/CSS bundles) from /assets
+    app.mount("/assets", StaticFiles(directory=_static_dir / "assets"), name="assets")
+
+    # All non-API paths return index.html (SPA client-side routing)
+    @app.get("/", include_in_schema=False)
+    async def spa_root() -> FileResponse:
+        return FileResponse(_static_dir / "index.html")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str, request: Request) -> FileResponse:
+        return FileResponse(_static_dir / "index.html")

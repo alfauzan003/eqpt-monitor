@@ -96,6 +96,11 @@ async def ws_telemetry(ws: WebSocket) -> None:
     async def forwarder() -> None:
         try:
             while True:
+                # Don't call get_message before any subscription is registered —
+                # redis-py raises RuntimeError if the connection isn't set up yet.
+                if not pubsub.subscribed:
+                    await asyncio.sleep(0.1)
+                    continue
                 message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
                 if message is None:
                     continue
