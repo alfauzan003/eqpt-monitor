@@ -35,3 +35,6 @@ grafana/data/
 
 # OS
 Thumbs.db
+
+# Git worktrees
+.worktrees/
