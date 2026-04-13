@@ -8,12 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from simulator.config import load_equipment_config
+from simulator.logging_config import setup_logging
 from simulator.opcua_server import build_server, tick_equipment
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+setup_logging()
 logger = logging.getLogger("simulator")
 
 
