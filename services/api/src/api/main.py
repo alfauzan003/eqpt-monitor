@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.config import settings
 from api.db import close_pool, get_pool
+from api.logging_config import setup_logging
 from api.redis_client import close_client
 from api.routes.batches import router as batches_router
 from api.routes.equipment import router as equipment_router
@@ -19,10 +20,7 @@ from api.routes.telemetry import router as telemetry_router
 from api.websocket import router as ws_router
 from api.seed import seed_equipment
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+setup_logging()
 logger = logging.getLogger("api")
 
 
