@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint simulator
+        run: ruff check services/simulator/src/
+
+      - name: Lint ingest
+        run: ruff check services/ingest/src/
+
+      - name: Lint API
+        run: ruff check services/api/src/
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: TypeScript check
+        run: |
+          cd frontend
+          npm ci
+          npx tsc --noEmit
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Simulator tests
+        run: |
+          cd services/simulator
+          pip install -e ".[dev]"
+          pytest tests/ -v
+
+      - name: Ingest tests
+        run: |
+          cd services/ingest
+          pip install -e ".[dev]"
+          pytest tests/ -v --ignore=tests/test_integration.py
+
+      - name: API tests
+        run: |
+          cd services/api
+          pip install -e ".[dev]"
+          pytest tests/ -v --ignore=tests/test_integration.py -m "not integration"
+
+      - name: Frontend tests
+        run: |
+          cd frontend
+          npm ci
+          npm test
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      timescaledb:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: factory
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: factory_pulse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U factory -d factory_pulse_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 10s
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API with dev deps
+        run: |
+          cd services/api
+          pip install -e ".[dev]"
+
+      - name: Run Alembic migrations
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_USER: factory
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: factory_pulse_test
+        run: |
+          cd services/api
+          alembic upgrade head
+
+      - name: Run integration tests
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_USER: factory
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: factory_pulse_test
+          REDIS_HOST: localhost
+        run: |
+          cd services/api
+          pytest tests/test_integration.py -v -m integration
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build simulator image
+        run: docker build -t factory-pulse-simulator services/simulator
+
+      - name: Build ingest image
+        run: docker build -t factory-pulse-ingest services/ingest
+
+      - name: Build API image (includes frontend)
+        run: docker build -t factory-pulse-api -f services/api/Dockerfile .
