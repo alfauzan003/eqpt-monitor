@@ -1,0 +1,90 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Equipment Status Distribution",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "timescaledb" },
+      "targets": [
+        {
+          "rawSql": "SELECT status, COUNT(DISTINCT equipment_id) AS count FROM telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND status IS NOT NULL GROUP BY status ORDER BY count DESC",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "running" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "idle" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "fault" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "maintenance" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "title": "Fleet Average Temperature",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "timescaledb" },
+      "targets": [
+        {
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, equipment_id, AVG(value) AS temperature FROM telemetry WHERE metric_name = 'temperature' AND $__timeFilter(time) GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "title": "Fleet Throughput (units/hr)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "timescaledb" },
+      "targets": [
+        {
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, equipment_id, AVG(value) AS throughput FROM telemetry WHERE metric_name = 'throughput' AND $__timeFilter(time) GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "title": "Fault Events",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "timescaledb" },
+      "targets": [
+        {
+          "rawSql": "SELECT equipment_id, MIN(time) AS fault_start, MAX(time) AS fault_end, COUNT(*) AS samples FROM telemetry WHERE status = 'fault' AND $__timeFilter(time) GROUP BY equipment_id ORDER BY fault_start DESC LIMIT 20",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "title": "Active Batches",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "timescaledb" },
+      "targets": [
+        {
+          "rawSql": "SELECT DISTINCT ON (equipment_id) equipment_id, batch_id, unit_id, status, time FROM telemetry WHERE time > NOW() - INTERVAL '5 minutes' ORDER BY equipment_id, time DESC",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["factory-pulse"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Factory Health",
+  "uid": "factory-health",
+  "version": 1
+}
