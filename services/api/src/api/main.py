@@ -8,6 +8,9 @@ from pathlib import Path as _P
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import make_asgi_app
+
+from api.middleware import MetricsMiddleware
 
 from api.config import settings
 from api.db import close_pool, get_pool
@@ -37,11 +40,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Factory Pulse API", version="0.1.0", lifespan=lifespan)
+app.add_middleware(MetricsMiddleware)
 app.include_router(health_router, prefix="/api")
 app.include_router(equipment_router, prefix="/api")
 app.include_router(telemetry_router, prefix="/api")
 app.include_router(batches_router, prefix="/api")
 app.include_router(ws_router)  # no /api prefix for ws
+
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 _static_dir = _P("/app/static")
 if _static_dir.exists():

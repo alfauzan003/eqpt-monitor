@@ -9,6 +9,7 @@ from typing import Union
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from api.metrics import WS_CONNECTIONS_ACTIVE, WS_MESSAGES_SENT, WS_CLIENT_DROPPED
 from api.redis_client import get_client
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ def parse_client_message(raw: str) -> ClientMessage:
 @router.websocket("/ws/telemetry")
 async def ws_telemetry(ws: WebSocket) -> None:
     await ws.accept()
+    WS_CONNECTIONS_ACTIVE.inc()
     client = get_client()
     pubsub = client.pubsub()
     subscribed: set[str] = set()
@@ -127,6 +129,7 @@ async def ws_telemetry(ws: WebSocket) -> None:
                         send_queue.get_nowait()  # drop oldest
                     except asyncio.QueueEmpty:
                         pass
+                    WS_CLIENT_DROPPED.labels(reason="queue_full").inc()
                     send_queue.put_nowait(json.dumps(out))
         except Exception:
             logger.exception("forwarder error")
@@ -136,6 +139,7 @@ async def ws_telemetry(ws: WebSocket) -> None:
             while True:
                 msg = await send_queue.get()
                 await ws.send_text(msg)
+                WS_MESSAGES_SENT.inc()
         except WebSocketDisconnect:
             pass
 
@@ -148,6 +152,7 @@ async def ws_telemetry(ws: WebSocket) -> None:
     )
     for t in pending:
         t.cancel()
+    WS_CONNECTIONS_ACTIVE.dec()
     try:
         await pubsub.close()
     except Exception:
