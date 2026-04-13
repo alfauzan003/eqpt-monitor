@@ -11,6 +11,7 @@ import redis.asyncio as redis
 from ingest.batch_buffer import BatchBuffer, Sample
 from ingest.config import settings
 from ingest.db_writer import DbWriter
+from ingest.logging_config import setup_logging
 from ingest.opcua_client import EquipmentState, connect_and_subscribe
 from ingest.redis_publisher import (
     RedisPublisher,
@@ -18,10 +19,7 @@ from ingest.redis_publisher import (
     build_publish_payload,
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+setup_logging()
 logger = logging.getLogger("ingest")
 
 
