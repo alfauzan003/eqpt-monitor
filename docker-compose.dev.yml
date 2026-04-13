@@ -1,0 +1,28 @@
+# Development overrides: mount source code for hot reload.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  simulator:
+    volumes:
+      - ./services/simulator/src:/app/src:ro
+      - ./config:/config:ro
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+
+  ingest:
+    volumes:
+      - ./services/ingest/src:/app/src:ro
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    volumes:
+      - ./services/api/src:/app/src:ro
+      - ./config:/config:ro
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/src"
