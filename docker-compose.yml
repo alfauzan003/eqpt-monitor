@@ -17,6 +17,12 @@ services:
       - "work_mem=16MB"
       - "-c"
       - "max_connections=50"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-factory} -d $${POSTGRES_DB:-factory_pulse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -45,9 +51,12 @@ services:
       OPCUA_ENDPOINT: opc.tcp://simulator:4840
       OPCUA_NAMESPACE: urn:factory-pulse:simulator
     depends_on:
-      - timescaledb
-      - redis
-      - simulator
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      simulator:
+        condition: service_started
 
   api:
     build:
@@ -65,8 +74,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - timescaledb
-      - redis
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   grafana:
     image: grafana/grafana:10.4.0
