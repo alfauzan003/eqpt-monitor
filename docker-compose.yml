@@ -50,6 +50,8 @@ services:
       REDIS_HOST: redis
       OPCUA_ENDPOINT: opc.tcp://simulator:4840
       OPCUA_NAMESPACE: urn:factory-pulse:simulator
+    ports:
+      - "9090:9090"
     depends_on:
       timescaledb:
         condition: service_healthy

@@ -12,7 +12,13 @@ from ingest.batch_buffer import BatchBuffer, Sample
 from ingest.config import settings
 from ingest.db_writer import DbWriter
 from ingest.logging_config import setup_logging
+from ingest.metrics import (
+    INGEST_MESSAGES_TOTAL,
+    OPCUA_CONNECTION_ATTEMPTS,
+    OPCUA_SUBSCRIPTION_ACTIVE,
+)
 from ingest.opcua_client import EquipmentState, connect_and_subscribe
+from prometheus_client import start_http_server
 from ingest.redis_publisher import (
     RedisPublisher,
     build_hot_cache_fields,
@@ -40,16 +46,22 @@ async def _connect_opcua_with_retry(on_update, state_store):
     delay = 1.0
     while True:
         try:
-            return await connect_and_subscribe(
+            result = await connect_and_subscribe(
                 settings.opcua_endpoint, on_update, state_store
             )
+            OPCUA_CONNECTION_ATTEMPTS.labels(result="success").inc()
+            OPCUA_SUBSCRIPTION_ACTIVE.set(1)
+            return result
         except Exception:
+            OPCUA_CONNECTION_ATTEMPTS.labels(result="failure").inc()
             logger.warning("opcua connect failed, retrying in %.1fs", delay)
             await asyncio.sleep(delay)
             delay = min(delay * 2, 60.0)
 
 
 async def run() -> None:
+    start_http_server(9090)
+    logger.info("prometheus metrics server started on :9090")
     pool = await _connect_db_with_retry()
     db_writer = DbWriter(pool)
 
@@ -67,6 +79,10 @@ async def run() -> None:
     def on_update(equipment_id: str, st: EquipmentState, now: datetime) -> None:
         if st.metrics is None:
             return
+        for metric_name in st.metrics:
+            INGEST_MESSAGES_TOTAL.labels(
+                equipment_id=equipment_id, metric_name=metric_name
+            ).inc()
         prev = last_unit.get(equipment_id)
         if prev is None or prev[0] != st.unit_id:
             last_unit[equipment_id] = (st.unit_id, now)

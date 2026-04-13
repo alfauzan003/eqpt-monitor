@@ -10,6 +10,7 @@ dependencies = [
     "pydantic>=2.6",
     "pydantic-settings>=2.2",
     "python-json-logger>=3.2",
+    "prometheus-client>=0.21",
 ]
 
 [project.optional-dependencies]

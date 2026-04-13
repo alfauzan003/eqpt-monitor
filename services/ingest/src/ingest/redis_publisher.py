@@ -8,6 +8,8 @@ from typing import Any
 
 import redis.asyncio as redis
 
+from ingest.metrics import REDIS_PUBLISH_ERRORS
+
 logger = logging.getLogger(__name__)
 
 HOT_CACHE_TTL_SECONDS = 300
@@ -64,6 +66,7 @@ class RedisPublisher:
         try:
             await self._client.publish(channel, json.dumps(payload))
         except Exception:
+            REDIS_PUBLISH_ERRORS.inc()
             logger.warning("redis publish failed for %s", equipment_id, exc_info=True)
 
     async def update_hot_cache(self, equipment_id: str, fields: dict[str, str]) -> None:
@@ -72,4 +75,5 @@ class RedisPublisher:
             await self._client.hset(key, mapping=fields)
             await self._client.expire(key, HOT_CACHE_TTL_SECONDS)
         except Exception:
+            REDIS_PUBLISH_ERRORS.inc()
             logger.warning("redis hot cache update failed for %s", equipment_id, exc_info=True)
