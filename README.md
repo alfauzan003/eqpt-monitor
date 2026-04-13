@@ -211,15 +211,18 @@ cd services/simulator
 pip install -e ".[dev]"
 pytest tests/ -v
 
-# Ingest (7 tests)
+# Ingest (8 tests)
 cd services/ingest
 pip install -e ".[dev]"
 pytest tests/ -v
 
-# API (17 tests)
+# API — unit tests (17 tests)
 cd services/api
 pip install -e ".[dev]"
-pytest tests/ -v
+pytest tests/ -v -m "not integration"
+
+# API — integration tests (6 tests, requires Docker)
+pytest tests/test_integration.py -v -m integration
 
 # Frontend (4 tests)
 cd frontend
@@ -264,6 +267,48 @@ All variables have working defaults. Only override if needed.
 
 ---
 
-## Phase 1b (Upcoming)
+## Key Engineering Decisions
 
-Prometheus metrics, structured JSON logging, integration tests with Testcontainers, CI/CD pipeline, Caddy/HTTPS, ADRs, README polish.
+| # | Decision | ADR |
+|---|---|---|
+| 1 | Two-service architecture (ingest + API) | [ADR 001](docs/adr/001-two-service-split.md) |
+| 2 | TimescaleDB over InfluxDB | [ADR 002](docs/adr/002-timescaledb-over-influxdb.md) |
+| 3 | OPC-UA only for Phase 1 | [ADR 003](docs/adr/003-opc-ua-only.md) |
+| 4 | Narrow EAV telemetry schema | [ADR 004](docs/adr/004-narrow-eav-telemetry-schema.md) |
+
+## Observability
+
+### Grafana Dashboards — http://localhost:3000
+
+| Dashboard | Description |
+|---|---|
+| **Equipment Telemetry** | Per-equipment drill-down: temperature, voltage, throughput over time |
+| **Factory Health** | Fleet-wide view: status distribution, temperature trends, fault events, active batches |
+| **System Health** | Self-monitoring: ingest rate, data freshness, DB size, chunk compression |
+
+### Prometheus Metrics
+
+| Service | Endpoint | Key Metrics |
+|---|---|---|
+| Ingest | `http://localhost:9090/metrics` | `ingest_messages_total`, `ingest_batch_latency_seconds`, `opcua_subscription_active` |
+| API | `http://localhost:8000/metrics` | `http_requests_total`, `http_request_duration_seconds`, `websocket_connections_active` |
+
+### Structured Logging
+
+All services emit JSON-formatted logs to stdout:
+
+```bash
+docker compose logs api --tail=5
+# {"timestamp": "2026-04-10T...", "level": "INFO", "service": "api", "message": "..."}
+```
+
+## CI/CD
+
+GitHub Actions runs on every push: lint (ruff + tsc), unit tests, integration tests (real TimescaleDB), Docker builds.
+
+## Roadmap
+
+- **Phase 1a** (complete): Core pipeline — OPC-UA simulator, ingest, TimescaleDB, Redis, API, React dashboard, Grafana
+- **Phase 1b** (complete): Observability, testing, CI, documentation
+- **Phase 1c** (next): Production deployment — Caddy/HTTPS, VM deploy, GitHub Actions deploy workflow
+- **Phase 2** (future): MQTT adapter, Redis Streams, alerting, OEE calculation
