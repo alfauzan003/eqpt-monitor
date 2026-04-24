@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir asyncua asyncpg "redis>=5.0" "pydantic>=2.6" "pydantic-settings>=2.2"
+RUN pip install --no-cache-dir asyncua asyncpg "redis>=5.0" "pydantic>=2.6" "pydantic-settings>=2.2" "prometheus-client>=0.21" "python-json-logger>=3.2"
 
 COPY src/ ./src/
 COPY pyproject.toml ./

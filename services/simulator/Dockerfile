@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install runtime deps first (before src/ exists)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir asyncua pyyaml "pydantic>=2.6"
+RUN pip install --no-cache-dir asyncua pyyaml "pydantic>=2.6" "python-json-logger>=3.2"
 
 # Copy source and install package (no-deps: deps already installed above)
 COPY src/ ./src/

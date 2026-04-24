@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     command:
@@ -17,12 +17,6 @@ services:
       - "work_mem=16MB"
       - "-c"
       - "max_connections=50"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-factory} -d $${POSTGRES_DB:-factory_pulse}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -30,7 +24,8 @@ services:
       - "6379:6379"
 
   simulator:
-    build: services/simulator
+    build:
+      context: services/simulator
     environment:
       OPCUA_ENDPOINT: opc.tcp://0.0.0.0:4840
       EQUIPMENT_CONFIG: /config/equipment.yaml
@@ -41,33 +36,32 @@ services:
       - "4840:4840"
 
   ingest:
-    build: services/ingest
+    build:
+      context: services/ingest
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-factory}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
       POSTGRES_HOST: timescaledb
+      POSTGRES_PORT: "5432"
       POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
       REDIS_HOST: redis
       OPCUA_ENDPOINT: opc.tcp://simulator:4840
       OPCUA_NAMESPACE: urn:factory-pulse:simulator
-    ports:
-      - "9090:9090"
+      INGEST_BATCH_SIZE: "100"
+      INGEST_FLUSH_SECONDS: "1.0"
     depends_on:
-      timescaledb:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      simulator:
-        condition: service_started
+      - timescaledb
+      - redis
+      - simulator
 
   api:
     build:
-      context: .
-      dockerfile: services/api/Dockerfile
+      context: services/api
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-factory}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
       POSTGRES_HOST: timescaledb
+      POSTGRES_PORT: "5432"
       POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
       REDIS_HOST: redis
       EQUIPMENT_CONFIG_PATH: /config/equipment.yaml
@@ -76,28 +70,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      timescaledb:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
-  grafana:
-    image: grafana/grafana:10.4.0
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      POSTGRES_USER: ${POSTGRES_USER:-factory}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-factory_pulse}
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - grafana_data:/var/lib/grafana
-    depends_on:
       - timescaledb
+      - redis
 
 volumes:
   timescaledb_data:
-  grafana_data:
