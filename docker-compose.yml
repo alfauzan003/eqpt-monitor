@@ -56,7 +56,8 @@ services:
 
   api:
     build:
-      context: services/api
+      context: .
+      dockerfile: services/api/Dockerfile
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-factory}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory_dev_password}
