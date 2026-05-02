@@ -1,4 +1,4 @@
-# Factory Pulse
+# EQPT MONITOR
 
 > Real-time telemetry platform for EV battery manufacturing — built to demonstrate industrial IoT, streaming data pipelines, and cloud-native backend engineering.
 
